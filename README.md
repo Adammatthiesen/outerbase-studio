@@ -23,11 +23,52 @@ Give it a try directly from your browser
 [![LibSQL Studio, sqlite online editor](https://github.com/user-attachments/assets/5d92ce58-9ce6-4cd7-9c65-4763d2d3b231)](https://libsqlstudio.com)
 [![Libsql studio playground](https://github.com/user-attachments/assets/dcf7e246-fe72-4351-ab10-ae2d1658087d)](https://libsqlstudio.com/playground/client?template=chinook)
 
-## Desktop App
+## Deploy to Docker instructions
 
-You can download [Windows and Mac desktop app here](https://github.com/outerbase/studio-desktop/releases/).
+Hello. First `git checkout master` because the develop branch is in active development.
 
-Outerbase Studio Desktop is a lightweight Electron wrapper for the Outerbase Studio web version. It enables support for drivers that aren't feasible in a browser environment, such as MySQL and PostgreSQL.
+At  `next.config.js` add
+```
+const nextConfig = {
+  output: 'standalone',   <-- at this line
+  ...
+}
+```
+
+Then add Dockerfile
+```
+FROM node:20-alpine AS builder
+
+# Setting working directory. All the path will be relative to WORKDIR
+WORKDIR /app
+# Installing dependencies
+COPY package*.json ./
+RUN npm install
+
+# Copying source files
+COPY . .
+
+# Building app
+RUN npm run build
+
+# Copy only standalone server to new image
+FROM node:20-alpine
+WORKDIR /app
+COPY --from=builder /app/.next/standalone ./
+COPY --from=builder /app/public ./public
+COPY --from=builder /app/.next/static ./.next/static
+CMD ["node", "server.js"]
+```
+
+Then just build
+```
+docker build -t outerbase-studio .
+```
+
+and run
+```
+docker run -p 3000:3000 outerbase-studio
+```
 
 ## Features
 
